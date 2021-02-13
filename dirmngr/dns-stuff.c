@@ -349,7 +349,7 @@ map_eai_to_gpg_error (int ec)
     case EAI_BADFLAGS:  err = gpg_error (GPG_ERR_INV_FLAG); break;
     case EAI_FAIL:      err = gpg_error (GPG_ERR_SERVER_FAILED); break;
     case EAI_MEMORY:    err = gpg_error (GPG_ERR_ENOMEM); break;
-#ifdef EAI_NODATA
+#if defined(EAI_NODATA) && !defined(_WIN32)
     case EAI_NODATA:    err = gpg_error (GPG_ERR_NO_DATA); break;
 #endif
     case EAI_NONAME:    err = gpg_error (GPG_ERR_NO_NAME); break;

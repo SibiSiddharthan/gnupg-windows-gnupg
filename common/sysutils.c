@@ -1317,7 +1317,7 @@ gnupg_stat (const char *name, struct stat *statbuf)
   if (any8bitchar (name))
     {
       wchar_t *wname;
-      struct _stat32 st32;
+      struct _stat64i32 st32;
       int ret;
 
       wname = utf8_to_wchar (name);

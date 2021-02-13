@@ -31,13 +31,7 @@
 #include "main.h"
 #include "call-agent.h"
 
-
-#ifdef HAVE_DOSISH_SYSTEM
-# define V21_MIGRATION_FNAME "gpg-v21-migrated"
-#else
 # define V21_MIGRATION_FNAME ".gpg-v21-migrated"
-#endif
-
 
 /* Check whether a default secring.gpg from GnuPG < 2.1 exists and
    import it if not yet done.  */

@@ -39,15 +39,11 @@
 #endif
 #include <errno.h>
 
-#if HAVE_W32_SYSTEM
-# /* Tell libgpg-error to provide the iconv macros.  */
+#ifndef HAVE_ICONV
 # define GPGRT_ENABLE_W32_ICONV_MACROS 1
-#elif HAVE_ANDROID_SYSTEM
-# /* No iconv support.  */
 #else
 # include <iconv.h>
 #endif
-
 
 #include "util.h"
 #include "common-defs.h"

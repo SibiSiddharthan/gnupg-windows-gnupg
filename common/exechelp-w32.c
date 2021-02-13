@@ -265,7 +265,7 @@ create_inheritable_pipe (HANDLE filedes[2], int flags)
   sec_attr.nLength = sizeof sec_attr;
   sec_attr.bInheritHandle = TRUE;
 
-  if (!CreatePipe (&r, &w, &sec_attr, 0))
+  if (!CreatePipe (&r, &w, &sec_attr, 65536))
     return -1;
 
   if ((flags & INHERIT_READ) == 0)

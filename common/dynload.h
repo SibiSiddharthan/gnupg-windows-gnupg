@@ -31,9 +31,6 @@
 #ifndef GNUPG_COMMON_DYNLOAD_H
 #define GNUPG_COMMON_DYNLOAD_H
 
-#ifndef __MINGW32__
-# include <dlfcn.h>
-#else
 # include <windows.h>
 # include "utf8conv.h"
 # include "mischelp.h"
@@ -93,5 +90,5 @@ dlclose (void * hd)
     }
   return -1;
 }
-# endif /*__MINGW32__*/
+
 #endif /*GNUPG_COMMON_DYNLOAD_H*/

@@ -57,7 +57,14 @@ gethome (void)
       char *home = getenv("HOME");
 
       if(home)
+      {
+#ifdef HAVE_W32_SYSTEM
+        for (char *p=home; *p; p++)
+          if (*p == '\\')
+            *p = '/';
+#endif
         home_buffer = xstrdup (home);
+      }
 #if defined(HAVE_GETPWUID) && defined(HAVE_PWD_H)
       else
         {
@@ -87,7 +94,14 @@ mygetcwd (void)
       return buffer;
 #else
       if (getcwd (buffer, size) == buffer)
+      {
+#ifdef HAVE_W32_SYSTEM
+        for (char *p=buffer; *p; p++)
+          if (*p == '\\')
+            *p = '/';
+#endif
         return buffer;
+      }
       xfree (buffer);
       if (errno != ERANGE)
         {
