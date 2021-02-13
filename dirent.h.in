@@ -1,0 +1,75 @@
+/*
+   Copyright (c) 2020-2021 Sibi Siddharthan
+
+   Distributed under the MIT license.
+   Refer to the LICENSE file at the root directory for details.
+*/
+
+#ifndef COMPAT_DIRENT_H
+#define COMPAT_DIRENT_H
+
+#include <sys/types.h>
+#include <wchar.h>
+
+//#define WIN32_LEAN_AND_MEAN
+//#include <Windows.h>
+
+struct _WIN32_FIND_DATAW;
+typedef struct _WIN32_FIND_DATAW WIN32_FIND_DATAW;
+
+struct _WIN32_FIND_DATAA;
+typedef struct _WIN32_FIND_DATAA WIN32_FIND_DATAA;
+
+#define DT_UNKNOWN 0
+#define DT_FIFO    1  // pipe
+#define DT_CHR     2  // character device
+#define DT_DIR     4  // directory
+#define DT_BLK     6  // block
+#define DT_REG     8  // regular file
+#define DT_LNK     10 // symbolic link
+#define DT_SOCK    12 // socket
+#define DT_WHT     14
+
+struct _wdirent
+{
+	ino_t d_ino;
+	off_t d_off;
+	unsigned short int d_reclen;
+	unsigned char d_type;
+	wchar_t d_name[260];
+};
+
+typedef struct
+{
+	void *d_handle;
+	WIN32_FIND_DATAW *data;
+	struct _wdirent *_dirent;
+	int offset;
+} _WDIR;
+
+_WDIR *_wopendir(const wchar_t *name);
+int _wclosedir(_WDIR *dirp);
+struct _wdirent *_wreaddir(_WDIR *dirp);
+
+struct dirent
+{
+	ino_t d_ino;
+	off_t d_off;
+	unsigned short int d_reclen;
+	unsigned char d_type;
+	char d_name[260];
+};
+
+typedef struct
+{
+	void *d_handle;
+	WIN32_FIND_DATAA *data;
+	struct dirent *_dirent;
+	int offset;
+} DIR;
+
+DIR *opendir(const char *name);
+int closedir(DIR *dirp);
+struct dirent *readdir(DIR *dirp);
+
+#endif
