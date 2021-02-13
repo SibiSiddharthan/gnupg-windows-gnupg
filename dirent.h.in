@@ -1,8 +1,9 @@
 /*
-   Copyright (c) 2020-2021 Sibi Siddharthan
+   Copyright (c) 2021 Sibi Siddharthan
 
    Distributed under the MIT license.
-   Refer to the LICENSE file at the root directory for details.
+   Refer to the LICENSE file at the root directory of the parent project
+   for details.
 */
 
 #ifndef COMPAT_DIRENT_H
@@ -10,9 +11,6 @@
 
 #include <sys/types.h>
 #include <wchar.h>
-
-//#define WIN32_LEAN_AND_MEAN
-//#include <Windows.h>
 
 struct _WIN32_FIND_DATAW;
 typedef struct _WIN32_FIND_DATAW WIN32_FIND_DATAW;

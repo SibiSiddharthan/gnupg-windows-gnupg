@@ -1,3 +1,11 @@
+#[[
+   Copyright (c) 2021 Sibi Siddharthan
+
+   Distributed under the MIT license.
+   Refer to the LICENSE file at the root directory of the parent project
+   for details.
+]]
+
 cmake_minimum_required(VERSION 3.12)
 project(gnupg
 		VERSION 2.2.27

@@ -1,9 +1,11 @@
 /*
-   Copyright (c) 2020-2021 Sibi Siddharthan
+   Copyright (c) 2021 Sibi Siddharthan
 
    Distributed under the MIT license.
-   Refer to the LICENSE file at the root directory for details.
+   Refer to the LICENSE file at the root directory of the parent project
+   for details.
 */
+
 
 #include <sys/time.h>
 #define WIN32_LEAN_AND_MEAN

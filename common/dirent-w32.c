@@ -1,3 +1,12 @@
+/*
+   Copyright (c) 2021 Sibi Siddharthan
+
+   Distributed under the MIT license.
+   Refer to the LICENSE file at the root directory of the parent project
+   for details.
+*/
+
+
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
