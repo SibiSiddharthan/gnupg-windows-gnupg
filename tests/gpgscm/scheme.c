@@ -453,7 +453,7 @@ struct op_code_info {
   unsigned char max_arity;
   char arg_tests_encoding[3];
 };
-static const struct op_code_info dispatch_table[];
+static const struct op_code_info dispatch_table[256]; // Closest power of 2 to the number of lines in opdefines.h, MSVC complains
 static int check_arguments (scheme *sc, const struct op_code_info *pcd, char *msg, size_t msg_size);
 static void Eval_Cycle(scheme *sc, enum scheme_opcodes op);
 static void assign_syntax(scheme *sc, enum scheme_opcodes op, char *name);

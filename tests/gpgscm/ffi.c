@@ -1434,30 +1434,23 @@ ffi_init (scheme *sc, const char *argv0, const char *scriptname,
   ffi_define (sc, "*pathsep*", sc->vptr->mk_character (sc, ':'));
 #endif
 
-  ffi_define (sc, "*win32*",
 #if _WIN32
-              sc->T
+  ffi_define (sc, "*win32*", sc->T);
 #else
-              sc->F
+  ffi_define (sc, "*win32*", sc->F);
 #endif
-              );
 
-  ffi_define (sc, "*maintainer-mode*",
 #if MAINTAINER_MODE
-              sc->T
+  ffi_define (sc, "*maintainer-mode*", sc->T);
 #else
-              sc->F
+  ffi_define (sc, "*maintainer-mode*", sc->F);
 #endif
-              );
 
-  ffi_define (sc, "*run-all-tests*",
 #if RUN_ALL_TESTS
-              sc->T
+  ffi_define (sc, "*run-all-tests*", sc->T);
 #else
-              sc->F
+  ffi_define (sc, "*run-all-tests*", sc->F);
 #endif
-              );
-
 
   ffi_define (sc, "*stdin*",
               sc->vptr->mk_port_from_file (sc, stdin, port_input));

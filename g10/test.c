@@ -67,7 +67,7 @@ static int verbose;
     if (verbose)                                \
       {                                         \
          printf ("%d. Checking %s...",		\
-	        tests, (description) ?: "");	\
+	        tests, (description) ? (description) : "");	\
          fflush (stdout);			\
       }                                         \
     test_result = (test);			\
@@ -81,7 +81,7 @@ static int verbose;
       {						\
         if (!verbose)                           \
           printf ("%d. Checking %s...",         \
-                  tests, (description) ?: "");  \
+                  tests, (description) ? (description) : "");  \
 	printf (" failed.\n");			\
 	printf ("  %s == %s failed.\n",		\
 		STRINGIFY(test),		\

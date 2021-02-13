@@ -250,13 +250,11 @@ static ARGPARSE_OPTS opts[] = {
   ARGPARSE_s_n (oSSHSupport,   "enable-ssh-support", N_("enable ssh support")),
   ARGPARSE_s_s (oSSHFingerprintDigest, "ssh-fingerprint-digest",
                 N_("|ALGO|use ALGO to show ssh fingerprints")),
-  ARGPARSE_s_n (oPuttySupport, "enable-putty-support",
 #ifdef HAVE_W32_SYSTEM
-                /* */           N_("enable putty support")
+  ARGPARSE_s_n (oPuttySupport, "enable-putty-support", N_("enable putty support")),
 #else
-                /* */           "@"
+  ARGPARSE_s_n (oPuttySupport, "enable-putty-support", "@"),
 #endif
-                ),
   ARGPARSE_s_n (oDisableExtendedKeyFormat, "disable-extended-key-format", "@"),
   ARGPARSE_s_n (oEnableExtendedKeyFormat, "enable-extended-key-format", "@"),
 

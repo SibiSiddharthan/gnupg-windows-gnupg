@@ -140,13 +140,11 @@ static ARGPARSE_OPTS opts[] = {
                 N_("|NAME|use NAME as ct-API driver")),
   ARGPARSE_s_s (opcscDriver, "pcsc-driver",
                 N_("|NAME|use NAME as PC/SC driver")),
-  ARGPARSE_s_n (oDisableCCID, "disable-ccid",
 #ifdef HAVE_LIBUSB
-                                    N_("do not use the internal CCID driver")
+  ARGPARSE_s_n (oDisableCCID, "disable-ccid",N_("do not use the internal CCID driver")),
 #else
-                                    "@"
+  ARGPARSE_s_n (oDisableCCID, "disable-ccid","@"),
 #endif
-                /* end --disable-ccid */),
   ARGPARSE_s_u (oCardTimeout, "card-timeout",
                 N_("|N|disconnect the card after N seconds of inactivity")),
 
