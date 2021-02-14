@@ -130,6 +130,7 @@ set(GPG_USE_TWOFISH 1)
 
 if(Iconv_FOUND)
 	set(HAVE_ICONV 1)
+	set(ICONV_CONST " ")
 endif()
 
 if(Intl_FOUND)
@@ -159,7 +160,6 @@ if(WIN32)
 	set(HAVE_FTELLO 1)
 	set(HAVE_STRCASECMP 1)
 	set(HAVE_STRNCASECMP 1)
-	set(LITTLE_ENDIAN_HOST 1)
 	set(USE_LDAP 1)
 	set(USE_LDAPWRAPPER 1)
 	if(NOT Intl_FOUND)
@@ -180,7 +180,7 @@ else()
 	set(ENCFS \"/usr/bin/encfs\")
 	set(FUSERMOUNT \"/usr/bin/fusermount\")
 	set(PRINTABLE_OS_NAME \"GNU/Linux\")
-	set(HAVE_WORKING_FORK 1)
+	set(HAVE_STRUCT_UCRED_PID 1) # Linux defines SO_PEERCRED
 endif()
 
 set(NAME_OF_SENDMAIL \"\")
@@ -209,7 +209,7 @@ if(WIN32)
 	set(CMAKE_REQUIRED_LIBRARIES ws2_32 Wldap32)
 endif()
 check_functions(atexit canonicalize_file_name clock_gettime ctermid explicit_bzero fcntl flockfile
-fork fsync ftello ftruncate funlockfile getaddrinfo getenv getpagesize getpeerucred getpwnam
+fork fsync fseeko ftello ftruncate funlockfile getaddrinfo getenv getpagesize getpeerucred getpwnam
 getpwuid getrlimit getrusage gettimeofday gmtime_r inet_ntop inet_pton inotify_init
 isascii ldap_get_option ldap_set_option ldap_start_tls_s ldap_start_tls_sA lstat
 memicmp memmove memrchr mmap nanosleep nl_langinfo pipe raise rand setenv setlocale
@@ -356,6 +356,23 @@ return !x && !y;
 VOLATILE_WORKS)
 if(NOT VOLATILE_WORKS)
 	set(volatile /**/)
+endif()
+
+check_c_source_runs("
+int main ()
+{
+	/* Are we little or big endian?  From Harbison&Steele.  */
+	union
+	{
+		long int l;
+		char c[sizeof (long int)];
+	} u;
+	u.l = 1;
+	return u.c[sizeof (long int) - 1] == 1;
+}"
+LITTLE_ENDIAN_HOST)
+if(NOT LITTLE_ENDIAN_HOST)
+	set(BIG_ENDIAN_HOST 1)
 endif()
 
 foreach(t byte u16 u32 ulong ushort)
@@ -509,6 +526,8 @@ if(ZLIB_FOUND)
 endif()
 if(WIN32)
 	list(APPEND required_libs ws2_32 iphlpapi Wldap32)
+else()
+	list(APPEND required_libs pthread resolv dl)
 endif()
 
 target_link_libraries(common ${required_libs})
