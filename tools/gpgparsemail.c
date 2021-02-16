@@ -38,7 +38,12 @@
 #include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/wait.h>
+#ifndef HAVE_W32_SYSTEM
+# include <sys/wait.h>
+#else
+# define WIN32_LEAN_AND_MEAN
+# include <Windows.h>
+#endif
 
 #include "rfc822parse.h"
 
@@ -173,6 +178,64 @@ run_gnupg (int smime, int sig_fd, int data_fd, int *close_list)
   char status_buf[10];
   FILE *fp;
 
+#ifdef HAVE_W32_SYSTEM
+  char invocation[256];
+  memset(invocation, 0, 256);
+    if(smime)
+    sprintf(invocation,"gpgsm.exe --enable-special-filenames --status-fd 2 --assume-base64 --verify -- - ");
+  else
+    sprintf(invocation,"gpg.exe --enable-special-filenames --status-fd 2 --verify --debug=512  -- - ");
+  
+  STARTUPINFOA S;
+	PROCESS_INFORMATION P;
+  memset(&S,0,sizeof(S));
+	memset(&P,0,sizeof(P));
+  
+  SECURITY_ATTRIBUTES SA;
+	SA.nLength = sizeof(SECURITY_ATTRIBUTES); 
+  SA.bInheritHandle = TRUE; 
+  SA.lpSecurityDescriptor = NULL;
+
+  HANDLE parent_writes_to_child, child_reads_from_parent;
+  HANDLE child_writes_to_parent, parent_reads_from_child;
+  CreatePipe(&child_reads_from_parent, &parent_writes_to_child, &SA, 65536);
+  CreatePipe(&parent_reads_from_child, &child_writes_to_parent, &SA, 65536);
+
+  HANDLE NULL_DEVICE = CreateFileA("NUL", GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+
+  S.cb = sizeof(S);
+	S.dwFlags = STARTF_USESTDHANDLES;
+  S.hStdError = child_writes_to_parent;
+  S.hStdOutput = NULL_DEVICE;
+  S.hStdInput = child_reads_from_parent;
+
+  CreateProcessA(NULL, invocation, NULL, NULL, TRUE, 0, NULL, NULL, &S, &P);
+  int length = _lseek(sig_fd,0,SEEK_END);
+  _lseek(sig_fd, 0, SEEK_SET);
+  char *buffer = (char*)malloc(sizeof(char)*length);
+  _read(sig_fd, buffer, length);
+  DWORD byte_count;
+  WriteFile(parent_writes_to_child, buffer, length, &byte_count, NULL);
+  //Write data_fd also if it is valid
+  if(data_fd != -1)
+  {
+    int nlength = _lseek(sig_fd,0,SEEK_END);
+    if(nlength > length)
+      buffer = (char*)realloc(buffer, sizeof(char)*nlength);
+    _read(data_fd, buffer, nlength);
+    WriteFile(parent_writes_to_child, buffer, nlength, &byte_count, NULL);
+  }
+  free(buffer);
+
+  /* Close other files. */
+  int fd;
+  for (i=0; (fd=close_list[i]) != -1; i++)
+    if (fd > 2 && fd != data_fd)
+      close (fd);
+  errno = 0;
+
+  fp = _fdopen(_open_osfhandle((intptr_t)parent_reads_from_child,0),"rb");
+#else
   if (pipe (rp) == -1)
     die ("error creating a pipe: %s", strerror (errno));
 
@@ -247,6 +310,7 @@ run_gnupg (int smime, int sig_fd, int data_fd, int *close_list)
   close (rp[1]);
 
   fp = fdopen (rp[0], "r");
+#endif
   if (!fp)
     die ("can't fdopen pipe for reading: %s", strerror (errno));
 
@@ -293,8 +357,19 @@ run_gnupg (int smime, int sig_fd, int data_fd, int *close_list)
     }
   fclose (fp);
 
+#ifdef HAVE_W32_SYSTEM
+  i = WaitForSingleObject(P.hProcess, INFINITE);
+  CloseHandle(parent_writes_to_child);
+  CloseHandle(child_reads_from_parent);
+  CloseHandle(child_writes_to_parent);
+  CloseHandle(parent_reads_from_child);
+  CloseHandle(NULL_DEVICE);
+  if(i == WAIT_FAILED)
+    i = -1;
+#else
   while ( (i=waitpid (pid, NULL, 0)) == -1 && errno == EINTR)
     ;
+#endif
   if (i == -1)
     die ("waiting for child failed: %s", strerror (errno));
 
@@ -792,7 +867,9 @@ main (int argc, char **argv)
   if (argc > 1)
     die ("usage: " PGM " [OPTION] [FILE] (try --help for more information)\n");
 
+#ifndef HAVE_W32_SYSTEM
   signal (SIGPIPE, SIG_IGN);
+#endif
 
   if (argc && strcmp (*argv, "-"))
     {
