@@ -980,9 +980,6 @@ target_link_libraries(gpgtar common)
 add_executable(gpgsplit tools/gpgsplit.c)
 target_link_libraries(gpgsplit common)
 
-#programs not ported to windows currently
-if(NOT WIN32)
-
 set(gpgparsemail_SOURCES
 gpgparsemail.c rfc822parse.c rfc822parse.h)
 list(TRANSFORM gpgparsemail_SOURCES PREPEND "tools/")
@@ -991,8 +988,6 @@ target_link_libraries(gpgparsemail common)
 
 add_executable(watchgnupg tools/watchgnupg.c)
 target_link_libraries(watchgnupg common)
-
-endif()
 
 set(gpg_wks_server_SOURCES
 gpg-wks-server.c
@@ -1023,7 +1018,9 @@ list(TRANSFORM gpg_wks_client_SOURCES PREPEND "tools/")
 add_executable(gpg-wks-client ${gpg_wks_client_SOURCES})
 target_link_libraries(gpg-wks-client common)
 
-set_target_properties(gpgconf gpg-connect-agent gpg-check-pattern gpgtar gpgsplit gpg-wks-server gpg-wks-client PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tools)
+set_target_properties(gpgconf gpg-connect-agent gpg-check-pattern
+gpgtar gpgsplit gpgparsemail gpg-wks-server gpg-wks-client watchgnupg
+PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tools)
 
 #############
 ## tests ####
@@ -1080,7 +1077,7 @@ endif()
 ###########################################
 
 set(bin_programs 
-kbxutil gpg gpgv gpgsm gpg-agent dirmngr dirmngr-client #gpgparsemail watchgnupg PORT to Windows
+kbxutil gpg gpgv gpgsm gpg-agent dirmngr dirmngr-client gpgparsemail watchgnupg
 gpgconf gpg-connect-agent gpgtar gpgcompose gpgsplit gpg-wks-server)
 
 set(libexec_programs
@@ -1099,13 +1096,6 @@ endif()
 
 install(PROGRAMS tools/addgnupghome tools/applygnupgdefaults
 		DESTINATION sbin)
-
-if(NOT WIN32)
-
-install(TARGETS gpgparsemail watchgnupg
-		RUNTIME DESTINATION bin)
-
-endif()
 
 file(GLOB gmo_files "po/*.gmo")
 foreach(gmo ${gmo_files})
