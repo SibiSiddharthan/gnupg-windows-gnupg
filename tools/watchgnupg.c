@@ -28,10 +28,16 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#ifdef _WIN32
+# include <WinSock2.h>
+# include <WS2tcpip.h>
+# include <afunix.h>
+#else
+# include <sys/socket.h>
+# include <sys/un.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
+#endif
 #include <fcntl.h>
 #include <time.h>
 #ifdef HAVE_SYS_SELECT_H
@@ -53,6 +59,34 @@
 #include "../common/mischelp.h"
 #endif
 
+#ifdef HAVE_W32_SYSTEM
+#define F_GETFL 0x1
+#define F_SETFL 0x2
+#define O_NONBLOCK 0x4
+
+static int fcntl(int fd, int command, int flags)
+{
+  if(fd < 0)
+  {
+    errno = EINVAL;
+    return -1;
+  }
+
+  switch (command)
+  {
+    case F_GETFL:
+      return 0;
+    case F_SETFL:
+    // Only O_NONBLOCK is used here
+      u_long dummy = 0;
+      int result = ioctlsocket(fd, FIONBIO, &dummy);
+      return result == NO_ERROR ? 0 : -1;
+  }
+
+  return -1;
+}
+
+#endif
 
 static int verbose;
 static int time_only;
@@ -285,6 +319,11 @@ main (int argc, char **argv)
   int force = 0;
   int tcp = 0;
 
+#ifdef HAVE_W32_SYSTEM
+  WSADATA wsaData;
+  WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
+
   struct sockaddr_un srvr_addr_un;
   struct sockaddr_in srvr_addr_in;
   struct sockaddr *addr_in = NULL;
@@ -424,7 +463,7 @@ main (int argc, char **argv)
  again:
   if (server_un != -1 && bind (server_un, addr_un, addrlen_un))
     {
-      if (errno == EADDRINUSE && force)
+      if ((errno == EADDRINUSE || errno == EINVAL) && force)
         {
           force = 0;
           remove (srvr_addr_un.sun_path);
@@ -507,6 +546,10 @@ main (int argc, char **argv)
               }
           }
     }
+
+#ifdef HAVE_W32_SYSTEM
+  WSACleanup();
+#endif
 
   return 0;
 }
