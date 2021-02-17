@@ -253,11 +253,11 @@ standard_homedir (void)
         {
           char *path;
 
-          path = w32_shgetfolderpath (NULL, CSIDL_APPDATA|CSIDL_FLAG_CREATE,
+          path = w32_shgetfolderpath (NULL, CSIDL_PROFILE|CSIDL_FLAG_CREATE,
                                       NULL, 0);
           if (path)
             {
-              dir = xstrconcat (path, "\\gnupg", NULL);
+              dir = xstrconcat (path, "\\.gnupg", NULL);
               xfree (path);
 
               /* Try to create the directory if it does not yet exists.  */
