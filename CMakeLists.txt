@@ -35,15 +35,16 @@ set(PACKAGE_VERSION \"${PROJECT_VERSION}\")
 set(VERSION \"${PROJECT_VERSION}\")
 
 include(UtilityFunctions)
-include(CheckCSourceCompiles)
 include(CheckLibraryExists)
-include(CheckStructHasMember)
-include(visibility)
+include(CTest)
+
+include(CheckEndianess)
+include(SignalHandler)
 include(LargeFiles)
+include(TimeWithSysTime)
 include(fork)
 include(inline)
-include(TimeWithSysTime)
-include(CTest)
+include(visibility)
 
 #find_package(GPGRT REQUIRED)
 #find_package(ASSUAN REQUIRED)
@@ -149,7 +150,6 @@ endif()
 
 if(WIN32)
 	set(HAVE_VISIBILITY 0)
-	set(TIME_WITH_SYS_TIME 1)
 	set(HAVE_W32_SYSTEM 1)
 	set(HAVE_W64_SYSTEM 1)
 	set(MKDIR_TAKES_ONE_ARG 1)
@@ -225,7 +225,7 @@ if(NOT HAVE_VPRINTF)
 endif()
 
 set(CMAKE_EXTRA_INCLUDE_FILES signal.h)
-check_functions_declarations(getpagesize sys_siglist)
+check_function_declarations(getpagesize sys_siglist)
 unset(CMAKE_EXTRA_INCLUDE_FILES)
 
 set(CMAKE_EXTRA_INCLUDE_FILES time.h)
@@ -234,9 +234,9 @@ mode_t pid_t size_t)
 unset(CMAKE_EXTRA_INCLUDE_FILES)
 
 if(WIN32)
-set(CMAKE_EXTRA_INCLUDE_FILES "winsock2.h;ws2tcpip.h")
+	set(CMAKE_EXTRA_INCLUDE_FILES "winsock2.h;ws2tcpip.h")
 else()
-set(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
+	set(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
 endif()
 check_types(socklen_t)
 unset(CMAKE_EXTRA_INCLUDE_FILES)
@@ -267,13 +267,11 @@ if(HAVE_SIGACTION)
 endif()
 unset(CMAKE_EXTRA_INCLUDE_FILES)
 
-check_struct_has_member("struct sockpeercred" "pid" "sys/types.h;sys/socket.h" HAVE_STRUCT_SOCKPEERCRED_PID)
-check_struct_has_member("struct ucred" "cr_pid" "sys/types.h;sys/socket.h" HAVE_STRUCT_UCRED_CR_PID)
-check_struct_has_member("struct ucred" "pid" "sys/types.h;sys/socket.h" HAVE_STRUCT_UCRED_PID)
+check_struct("struct sockpeercred" "pid" "sys/types.h;sys/socket.h" HAVE_STRUCT_SOCKPEERCRED_PID)
+check_struct("struct ucred" "cr_pid" "sys/types.h;sys/socket.h" HAVE_STRUCT_UCRED_CR_PID)
+check_struct("struct ucred" "pid" "sys/types.h;sys/socket.h" HAVE_STRUCT_UCRED_PID)
 
-
-
-check_c_source_compiles("
+check_compile("Checking for LC_MESSAGES in locale.h" "found" "not found" "
 #include <locale.h>
 int main ()
 {
@@ -281,27 +279,26 @@ int main ()
 }"
 HAVE_LC_MESSAGES)
 
-set(CMAKE_REQUIRED_LIBRARIES resolv)
-check_c_source_compiles("
-#define BIND_8_COMPAT
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/nameser.h>
-#include <resolv.h>
-int
-main ()
-{
-unsigned char answer[PACKETSZ];
-  res_query(\"foo.bar\",C_IN,T_A,answer,PACKETSZ);
-  dn_skipname(0,0); dn_expand(0,0,0,0,0);
+if(UNIX)
+	set(CMAKE_REQUIRED_LIBRARIES resolv)
+	check_compile("Checking whether the resolver is usable with BIND_8_COMPAT" "yes" "no" "
+	#define BIND_8_COMPAT
+	#include <sys/types.h>
+	#include <netinet/in.h>
+	#include <arpa/nameser.h>
+	#include <resolv.h>
+	int main ()
+	{
+		unsigned char answer[PACKETSZ];
+		res_query(\"foo.bar\",C_IN,T_A,answer,PACKETSZ);
+		dn_skipname(0,0); dn_expand(0,0,0,0,0);
+		return 0;
+	}"
+	HAVE_SYSTEM_RESOLVER)
+	unset(CMAKE_REQUIRED_LIBRARIES)
+endif()
 
-  ;
-  return 0;
-}"
-HAVE_SYSTEM_RESOLVER)
-unset(CMAKE_REQUIRED_LIBRARIES)
-
-check_c_source_compiles("
+check_compile("Checking whether time_t is unsigned" "no" "yes" "
 #if ${TIME_WITH_SYS_TIME}
 # include <sys/time.h>
 # include <time.h>
@@ -313,76 +310,36 @@ check_c_source_compiles("
 # endif
 #endif
 
-int
-main ()
-{
-static int test_array [1 - 2 * !(((time_t)-1) < 0)];
-test_array [0] = 0;
-return test_array [0];
-
-  ;
-  return 0;
-}"
-HAVE_UNSIGNED_TIME_T)
-
-check_c_source_compiles("
-#include <sys/types.h>
-#include <signal.h>
-
-int
-main ()
-{
-return *(signal (0, 0)) (0) == 1;
-  ;
-  return 0;
-}"
-RETSIGTYPE)
-if(RETSIGTYPE)
-	set(RETSIGTYPE int)
-else()
-	set(RETSIGTYPE void)
-endif()
-
-check_c_source_compiles("
 int main ()
 {
+	static int test_array [1 - 2 * !(((time_t)-1) < 0)];
+	test_array [0] = 0;
+	return test_array [0];
+}"
+HAVE_SIGNED_TIME_T)
+if(NOT HAVE_SIGNED_TIME_T)
+	set(HAVE_UNSIGNED_TIME_T 1)
+endif()
 
-volatile int x;
-int * volatile y = (int *) 0;
-return !x && !y;
-  ;
-  return 0;
+check_compile("Checking whether volatile works" "yes" "no" "
+int main ()
+{
+	volatile int x;
+	int * volatile y = (int *) 0;
+	return !x && !y;
 }"
 VOLATILE_WORKS)
 if(NOT VOLATILE_WORKS)
 	set(volatile /**/)
 endif()
 
-check_c_source_runs("
-int main ()
-{
-	/* Are we little or big endian?  From Harbison&Steele.  */
-	union
-	{
-		long int l;
-		char c[sizeof (long int)];
-	} u;
-	u.l = 1;
-	return u.c[sizeof (long int) - 1] == 1;
-}"
-LITTLE_ENDIAN_HOST)
-if(NOT LITTLE_ENDIAN_HOST)
-	set(BIG_ENDIAN_HOST 1)
-endif()
-
 foreach(t byte u16 u32 ulong ushort)
-string(TOUPPER ${t} ut)
-	check_c_source_compiles("
+	string(TOUPPER ${t} ut)
+	check_compile("Checking whether ${t} is a typedef" "yes" "no" "
 		#define _GNU_SOURCE 1
 		#include <stdlib.h>
 		#include <sys/types.h>
-		int
-		main ()
+		int main ()
 		{
 			#undef ${t}
 			int a = sizeof(${t});
@@ -390,7 +347,6 @@ string(TOUPPER ${t} ut)
 		}"
 	HAVE_${ut}_TYPEDEF)
 endforeach()
-
 
 configure_file(gnupg-config.h.in config.h)
 if(WIN32)
